@@ -2,7 +2,10 @@ package abc139.e;
 
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
@@ -10,10 +13,8 @@ public class Main {
         solve(System.in, System.out);
     }
 
-    static void resetAvailable(int[] available, int N) {
-        for(int i = 0; i < N; i++) {
-            available[i] = 1;
-        }
+    static void resetAvailable(int[] available) {
+        Arrays.fill(available, 1);
     }
 
     static boolean isAllAvailable(int[] available, int N) {
@@ -39,7 +40,7 @@ public class Main {
         int available[] = new int[N];//使用可能なら1.　不可なら0
         int pos[] = new int[N];//全部完了したらN-1 N-1にはアクセス不可
         int value [][] = new int[N][N-1];
-        resetAvailable(available, N);
+        resetAvailable(available);
         for(int i = 0; i < N; i++) {
             pos[i] = 0;
         }
@@ -49,33 +50,58 @@ public class Main {
             }
         }
 
-        long firstTime = System.currentTimeMillis();
-
-
         int answer = 0;
-        while(!isAllDone(pos, N)) {
-            for (int i = 0; i < N; i++) {
-                if(System.nanoTime() - firstTime > 1800000) {
-                  os.println(N * (N-1)/2);
-                  return;
-                }
-                if(available[i] == 0 || pos[i] == N-1)
-                    continue;
+        boolean is_match_exist = false;
+        int searchIndex[] = new int[N];
+        Arrays.fill(searchIndex, -1);
+        int searchPos = 0;
 
-                int enemy = value[i][pos[i]];
-                if(value[enemy][pos[enemy]] == i && available[enemy] == 1){
-                    available[i] = 0;
-                    available[enemy] = 0;
-                    pos[i] += 1;
-                    pos[enemy] += 1;
+        while(!isAllDone(pos, N)) {
+            searchPos = 0;
+            if(!is_match_exist) {
+                for (int i = 0; i < N; i++) {
+                    if (available[i] == 0 || pos[i] == N - 1)
+                        continue;
+
+                    int enemy = value[i][pos[i]];
+                    if (value[enemy][pos[enemy]] == i && available[enemy] == 1) {
+                        available[i] = 0;
+                        available[enemy] = 0;
+                        pos[i] += 1;
+                        pos[enemy] += 1;
+                        searchIndex[searchPos++] = i;
+                        searchIndex[searchPos++] = enemy;
+                    }
                 }
+            } else {
+                int searchIndexTemp[] = new int[N];
+                Arrays.fill(searchIndexTemp, -1);
+                for(int i : searchIndex) {
+                    if(i == -1)
+                        break;
+
+                    if (available[i] == 0 || pos[i] == N - 1)
+                        continue;
+
+                    int enemy = value[i][pos[i]];
+                    if (value[enemy][pos[enemy]] == i && available[enemy] == 1) {
+                        available[i] = 0;
+                        available[enemy] = 0;
+                        pos[i] += 1;
+                        pos[enemy] += 1;
+                        searchIndexTemp[searchPos++] = i;
+                        searchIndexTemp[searchPos++] = enemy;
+                    }
+                }
+                searchIndex = Arrays.copyOf(searchIndexTemp, N);
             }
             if (isAllAvailable(available, N)) {
                 os.println("-1");
                 return;
             } else {
                 answer++;
-                resetAvailable(available, N);
+                is_match_exist = true;
+                resetAvailable(available);
             }
         }
         os.println(answer);
